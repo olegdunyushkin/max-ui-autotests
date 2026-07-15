@@ -1,0 +1,8 @@
+.gradle/
+build/
+allure-results/
+.idea/
+*.iml
+.DS_Store
+notifications/config.json
+downloads/
