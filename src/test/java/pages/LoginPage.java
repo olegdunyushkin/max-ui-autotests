@@ -62,7 +62,14 @@ public class LoginPage {
                 .findBy(exactText("Войти по номеру телефона"))
                 .shouldBe(visible)
                 .click();
+        return this;
+    }
+
+    @Step("Проверяем форму входа по номеру телефона")
+    public LoginPage shouldShowPhoneLogin() {
         pageTitle.shouldHave(exactText("С каким номером телефона хотите войти?"));
+        phoneInput.shouldBe(visible);
+        submitButton.shouldBe(visible);
         return this;
     }
 
@@ -97,16 +104,20 @@ public class LoginPage {
                 .findBy(text("+7"))
                 .shouldBe(visible)
                 .click();
-        countryDialog.shouldBe(visible);
         return this;
     }
 
-    @Step("Выбираем страну {countryName} с кодом {countryCode}")
-    public LoginPage selectCountry(String countryName, String countryCode) {
+    @Step("Выбираем страну {countryName}")
+    public LoginPage selectCountry(String countryName) {
         countryDialog.$$("button")
                 .findBy(text(countryName))
-                .shouldHave(text(countryCode))
+                .shouldBe(visible)
                 .click();
+        return this;
+    }
+
+    @Step("Проверяем телефонный код {countryCode}")
+    public LoginPage shouldHaveCountryCode(String countryCode) {
         $$("button")
                 .findBy(text(countryCode))
                 .shouldBe(visible);

@@ -39,6 +39,7 @@ public class LoginTests extends TestBase {
     void userCanSwitchBetweenLoginMethods() {
         loginPage.openPage()
                 .switchToPhoneLogin()
+                .shouldShowPhoneLogin()
                 .switchToQrLogin()
                 .shouldShowQrLogin();
     }
@@ -72,7 +73,8 @@ public class LoginTests extends TestBase {
         loginPage.openPage()
                 .switchToPhoneLogin()
                 .openCountryDialog()
-                .selectCountry(countryName, countryCode);
+                .selectCountry(countryName)
+                .shouldHaveCountryCode(countryCode);
     }
 
     @Test
