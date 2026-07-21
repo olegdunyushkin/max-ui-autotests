@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Ограничение внешнего окружения",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*MAX ограничил доступ.*"
+  },
+  {
+    "name": "Страница не загрузилась",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(boot-loader|Loading).*"
+  },
+  {
+    "name": "Элемент не найден",
+    "matchedStatuses": ["failed", "broken"],
+    "traceRegex": ".*(ElementNotFound|NoSuchElementException).*"
+  },
+  {
+    "name": "Ошибка проверки",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*(expected|Expected|Element should|Condition not met).*"
+  },
+  {
+    "name": "Ошибка WebDriver",
+    "matchedStatuses": ["broken"],
+    "traceRegex": ".*(WebDriverException|SessionNotCreatedException).*"
+  }
+]

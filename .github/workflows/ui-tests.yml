@@ -1,0 +1,149 @@
+name: UI Tests
+
+on:
+  push:
+    branches:
+      - main
+      - portfolio-version
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Набор тестов
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - regression
+          - responsive
+          - all
+      browser:
+        description: Браузер
+        required: true
+        default: chrome
+        type: choice
+        options:
+          - chrome
+          - firefox
+      base_url:
+        description: Адрес главной страницы
+        required: true
+        default: https://max.ru
+        type: string
+      download_url:
+        description: Адрес страницы загрузки
+        required: true
+        default: https://download.max.ru
+        type: string
+      web_url:
+        description: Адрес веб-версии
+        required: true
+        default: https://web.max.ru
+        type: string
+      request_interval:
+        description: Интервал между открытиями страниц, мс
+        required: true
+        default: '5000'
+        type: choice
+        options:
+          - '0'
+          - '5000'
+          - '10000'
+          - '20000'
+      parallel:
+        description: Параллельный запуск
+        required: true
+        default: false
+        type: boolean
+      threads:
+        description: Число потоков при параллельном запуске
+        required: true
+        default: '2'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      TEST_SUITE: ${{ inputs.suite || 'smoke' }}
+      TEST_BROWSER: ${{ inputs.browser || 'chrome' }}
+      BASE_URL: ${{ inputs.base_url || 'https://max.ru' }}
+      DOWNLOAD_URL: ${{ inputs.download_url || 'https://download.max.ru' }}
+      WEB_URL: ${{ inputs.web_url || 'https://web.max.ru' }}
+      REQUEST_INTERVAL: ${{ inputs.request_interval || '5000' }}
+      PARALLEL: ${{ inputs.parallel || 'false' }}
+      THREADS: ${{ inputs.threads || '2' }}
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v6
+
+      - name: Установить Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Настроить Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          validate-wrappers: true
+
+      - name: Запустить UI-тесты
+        run: |
+          if [ "$TEST_SUITE" = "all" ]; then
+            ./gradlew clean test \
+              -Dheadless=true \
+              -Dbrowser="$TEST_BROWSER" \
+              -DbaseUrl="$BASE_URL" \
+              -DdownloadUrl="$DOWNLOAD_URL" \
+              -DwebUrl="$WEB_URL" \
+              -DrequestInterval="$REQUEST_INTERVAL" \
+              -Dparallel="$PARALLEL" \
+              -Dthreads="$THREADS"
+          else
+            ./gradlew clean test \
+              -Dheadless=true \
+              -Dbrowser="$TEST_BROWSER" \
+              -DbaseUrl="$BASE_URL" \
+              -DdownloadUrl="$DOWNLOAD_URL" \
+              -DwebUrl="$WEB_URL" \
+              -DrequestInterval="$REQUEST_INTERVAL" \
+              -Dtags="$TEST_SUITE" \
+              -Dparallel="$PARALLEL" \
+              -Dthreads="$THREADS"
+          fi
+
+      - name: Сформировать Allure Report
+        if: always()
+        run: ./gradlew allureReport --no-daemon
+        continue-on-error: true
+
+      - name: Сохранить результаты тестов
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ env.TEST_SUITE }}-${{ env.TEST_BROWSER }}
+          path: |
+            build/reports/tests/
+            build/test-results/
+            build/allure-results/
+            build/reports/allure-report/
+          if-no-files-found: warn
+          retention-days: 14

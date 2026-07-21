@@ -5,6 +5,12 @@ plugins {
 
 def allureVersion = '2.35.2'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -35,7 +41,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-test {
+tasks.withType(Test).configureEach {
     useJUnitPlatform {
         def tags = System.getProperty('tags', '')
         if (!tags.isBlank()) {
@@ -44,11 +50,52 @@ test {
     }
 
     systemProperties(System.getProperties())
+    systemProperty 'junit.jupiter.execution.parallel.enabled', System.getProperty('parallel', 'false')
+    systemProperty 'junit.jupiter.execution.parallel.config.strategy', 'fixed'
+    systemProperty 'junit.jupiter.execution.parallel.config.fixed.parallelism',
+            System.getProperty('threads', '3')
+    systemProperty 'junit.jupiter.execution.parallel.config.fixed.max-pool-size',
+            System.getProperty('threads', '3')
+    systemProperty 'junit.jupiter.execution.parallel.config.fixed.saturate', 'false'
+    systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+    systemProperty 'junit.jupiter.execution.parallel.mode.classes.default', 'concurrent'
+
+    outputs.upToDateWhen { false }
 
     testLogging {
         lifecycle {
             events 'started', 'skipped', 'failed', 'standard_error', 'standard_out'
             exceptionFormat 'short'
         }
+    }
+}
+
+tasks.register('smokeTest', Test) {
+    group = 'verification'
+    description = 'Запускает критичные smoke-тесты'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'smoke'
+    }
+}
+
+tasks.register('regressionTest', Test) {
+    group = 'verification'
+    description = 'Запускает расширенный регрессионный набор'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'regression'
+    }
+}
+
+tasks.register('responsiveTest', Test) {
+    group = 'verification'
+    description = 'Запускает проверки адаптивной вёрстки'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'responsive'
     }
 }
